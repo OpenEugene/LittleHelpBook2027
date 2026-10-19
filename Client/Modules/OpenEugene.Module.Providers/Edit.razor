@@ -129,6 +129,9 @@ else
 
     public override string Actions => "Add,Edit";
 
+    // Edit pages render in the page's normal container, never the admin popup.
+    public override bool UseAdminContainer => false;
+
     public override string Title => "Manage Provider";
 
     private ProviderDetail _detail = new ProviderDetail();

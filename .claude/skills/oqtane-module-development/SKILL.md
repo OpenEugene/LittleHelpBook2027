@@ -284,6 +284,8 @@ Apply this skill whenever:
 - No Localizer — use plain text strings directly.
 - Settings go in `Settings.razor`; Oqtane loads it automatically from the
   module admin panel.
+- Edit, add and details actions never use the admin container: override
+  `UseAdminContainer => false` so they render in the page's normal container.
 
 ## References
 

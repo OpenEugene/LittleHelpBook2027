@@ -18,10 +18,12 @@ namespace OpenEugene.Theme.LittleHelpBook
             {
                 // Bootstrap is still used by Oqtane's own controls (menu, control panel, ActionLink).
                 new Stylesheet(Constants.BootstrapStylesheetUrl, Constants.BootstrapStylesheetIntegrity, "anonymous"),
-                new Stylesheet("_content/MudBlazor/MudBlazor.min.css"),
+                new Stylesheet("/_content/MudBlazor/MudBlazor.min.css"),
                 new Stylesheet("~/Theme.css"),
                 new Script(Constants.BootstrapScriptUrl, Constants.BootstrapScriptIntegrity, "anonymous"),
-                new Script("_content/MudBlazor/MudBlazor.min.js")
+                // Site level so the server writes it into the page before MudBlazor's
+                // interactive components start; page-level scripts load too late.
+                new Script("/_content/MudBlazor/MudBlazor.min.js") { Level = ResourceLevel.Site }
             }
         };
     }

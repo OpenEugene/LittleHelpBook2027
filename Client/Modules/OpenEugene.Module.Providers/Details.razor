@@ -1,0 +1,155 @@
+@using OpenEugene.Module.Providers.Services
+@using OpenEugene.LittleHelpBook.Models
+
+@namespace OpenEugene.Module.Providers
+@inherits ModuleBase
+@inject IProviderService ProviderService
+@inject NavigationManager NavigationManager
+
+@if (!_isLoaded)
+{
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudProgressCircular Indeterminate="true" Size="Size.Small" aria-hidden="true" />
+        <MudText role="status">Loading...</MudText>
+    </MudStack>
+}
+else if (_detail == null)
+{
+    <MudText>This provider could not be found.</MudText>
+    <MudButton Variant="Variant.Outlined" Href="@NavigateUrl()" Class="mt-3">Back to providers</MudButton>
+}
+else
+{
+    var provider = _detail.Provider;
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Spacing="2">
+            <MudText Typo="Typo.h5" Class="flex-grow-1">@provider.Name</MudText>
+            @* Edit and Delete only render for people with edit permission. *@
+            <ActionLink Action="Edit" Parameters="@($"id={provider.ProviderId}")" />
+            <ActionDialog Header="Delete Provider" Message="@($"Delete {provider.Name}? This also removes its addresses, phone numbers and category links.")" Action="Delete" Security="SecurityAccessLevel.Edit" Class="btn btn-danger" OnClick="@(async () => await Delete())" Id="@provider.ProviderId.ToString()" />
+        </MudStack>
+
+        @if (!string.IsNullOrWhiteSpace(provider.Description))
+        {
+            <MudText Style="white-space: pre-line;">@provider.Description</MudText>
+        }
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudText Typo="Typo.h6" Class="mb-2">Contact</MudText>
+            @if (!string.IsNullOrWhiteSpace(provider.WebAddress))
+            {
+                <MudText><strong>Website:</strong> <MudLink Href="@WebsiteUrl(provider.WebAddress)" Target="_blank">@provider.WebAddress</MudLink></MudText>
+            }
+            @if (!string.IsNullOrWhiteSpace(provider.EmailAddress))
+            {
+                <MudText><strong>Email:</strong> <MudLink Href="@($"mailto:{provider.EmailAddress}")">@provider.EmailAddress</MudLink></MudText>
+            }
+            @if (!string.IsNullOrWhiteSpace(provider.HoursOfOperation))
+            {
+                <MudText><strong>Hours:</strong> @provider.HoursOfOperation</MudText>
+            }
+            @foreach (var phone in _detail.PhoneNumbers.Where(item => !string.IsNullOrWhiteSpace(item.Number)))
+            {
+                <MudText>
+                    <strong>@(string.IsNullOrWhiteSpace(phone.Description) ? "Phone" : phone.Description):</strong>
+                    @phone.Number@(phone.Extension.HasValue ? $" ext. {phone.Extension}" : "")
+                </MudText>
+            }
+        </MudPaper>
+
+        @if (_detail.Addresses.Any())
+        {
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h6" Class="mb-2">@(_detail.Addresses.Count == 1 ? "Address" : "Addresses")</MudText>
+                @foreach (var address in _detail.Addresses)
+                {
+                    <div class="mb-3">
+                        @foreach (var line in new[] { address.Address1, address.Address2, address.Address3 }.Where(item => !string.IsNullOrWhiteSpace(item)))
+                        {
+                            <MudText>@line</MudText>
+                        }
+                        <MudText>@string.Join(" ", new[] { string.Join(", ", new[] { address.City, address.State }.Where(item => !string.IsNullOrWhiteSpace(item))), address.PostalCode }.Where(item => !string.IsNullOrWhiteSpace(item)))</MudText>
+                        @if (address.HasWheelchairAccess)
+                        {
+                            <MudChip T="string" Size="Size.Small" Icon="@MudBlazor.Icons.Material.Filled.Accessible">Wheelchair access</MudChip>
+                        }
+                        @if (address.HasLanguageSupport)
+                        {
+                            <MudChip T="string" Size="Size.Small" Icon="@MudBlazor.Icons.Material.Filled.Translate">Language support</MudChip>
+                        }
+                    </div>
+                }
+            </MudPaper>
+        }
+
+        @if (_detail.CategoryIds.Any())
+        {
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h6" Class="mb-2">Categories</MudText>
+                @foreach (var tree in _categories.Where(item => _detail.CategoryIds.Contains(item.Category.CategoryId)))
+                {
+                    <div class="mb-2">
+                        <MudText><strong>@tree.Category.Name</strong></MudText>
+                        @foreach (var sub in tree.SubCategories.Where(item => _detail.SubCategoryIds.Contains(item.SubCategoryId)))
+                        {
+                            <MudChip T="string" Size="Size.Small">@sub.Name</MudChip>
+                        }
+                    </div>
+                }
+            </MudPaper>
+        }
+
+        <div>
+            <MudButton Variant="Variant.Outlined" Href="@NavigateUrl()" StartIcon="@MudBlazor.Icons.Material.Filled.ArrowBack">Back to providers</MudButton>
+        </div>
+    </MudStack>
+}
+
+@code {
+    public override string Actions => "Details";
+
+    public override string Title => "Provider";
+
+    // Show the details in the page's normal container, not the admin popup.
+    public override bool UseAdminContainer => false;
+
+    private ProviderDetail _detail;
+    private List<CategoryTree> _categories = new List<CategoryTree>();
+    private bool _isLoaded;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            _categories = await ProviderService.GetCategoriesAsync(ModuleState.ModuleId) ?? new List<CategoryTree>();
+            if (int.TryParse(PageState.QueryString.GetValueOrDefault("id"), out var id))
+            {
+                _detail = await ProviderService.GetProviderAsync(id, ModuleState.ModuleId);
+            }
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Loading Provider {ProviderId} {Error}", PageState.QueryString.GetValueOrDefault("id"), ex.Message);
+            AddModuleMessage("The provider could not be loaded.", MessageType.Error);
+        }
+        _isLoaded = true;
+    }
+
+    private static string WebsiteUrl(string address) =>
+        address.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? address : $"https://{address}";
+
+    private async Task Delete()
+    {
+        try
+        {
+            await ProviderService.DeleteProviderAsync(_detail.Provider.ProviderId, ModuleState.ModuleId);
+            await logger.LogInformation("Provider Deleted {ProviderId}", _detail.Provider.ProviderId);
+            NavigationManager.NavigateTo(NavigateUrl());
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Deleting Provider {ProviderId} {Error}", _detail.Provider.ProviderId, ex.Message);
+            AddModuleMessage($"{_detail.Provider.Name} could not be deleted.", MessageType.Error);
+        }
+    }
+}

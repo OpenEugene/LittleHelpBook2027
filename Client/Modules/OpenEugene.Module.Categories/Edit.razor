@@ -64,6 +64,9 @@ else
 
     public override string Actions => "Add,Edit";
 
+    // Edit pages render in the page's normal container, never the admin popup.
+    public override bool UseAdminContainer => false;
+
     public override string Title => _isSub ? "Manage Subcategory" : "Manage Category";
 
     private List<CategoryTree> _categories = new List<CategoryTree>();
