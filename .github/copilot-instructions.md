@@ -11,8 +11,8 @@
 - Rely on Oqtane page/controller permissions and avoid additional authorization checks in service layer methods. Authorization is handled automatically by Oqtane at the page/controller level.
 
 ## UI / Icons
-- Use Open Iconic icons (oi oi-*) everywhere in this workspace.
-- Do not use Bootstrap Icons (bi bi-*) or Font Awesome.
+- Use MudBlazor components for page UI (inputs, tables, layout, buttons). Keep Oqtane's `ActionLink`, `ActionDialog` and `AuditInfo` for permission-aware actions.
+- Use MudBlazor's Material icons (`MudBlazor.Icons.Material.*`). Do not use Open Iconic, Bootstrap Icons or Font Awesome.
 
 ## Project Lifecycle
 - Follow existing project lifecycle pattern for index pages: use `OnParametersSetAsync` rather than `OnInitializedAsync`.

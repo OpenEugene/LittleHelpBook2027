@@ -276,11 +276,16 @@ Apply this skill whenever:
 ## PWApps Constraints
 
 - No EF migrations or navigation properties.
-- No Radzen controls unless explicitly requested — default to Bootstrap and
-  Oqtane/Blazor built-ins.
+- Use MudBlazor for page UI; no Radzen controls. Keep Oqtane's `ActionLink`,
+  `ActionDialog` and `AuditInfo` for permission-aware actions. The
+  `OpenEugene.Theme.LittleHelpBook` theme hosts the MudBlazor providers and
+  loads its CSS and JS, so modules only use the components; the site must
+  use that theme.
 - No Localizer — use plain text strings directly.
 - Settings go in `Settings.razor`; Oqtane loads it automatically from the
   module admin panel.
+- Edit, add and details actions never use the admin container: override
+  `UseAdminContainer => false` so they render in the page's normal container.
 
 ## References
 

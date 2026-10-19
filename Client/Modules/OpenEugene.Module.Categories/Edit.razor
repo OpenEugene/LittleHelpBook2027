@@ -8,67 +8,64 @@
 
 @if (!_isLoaded)
 {
-    <p role="status"><em>Loading...</em></p>
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudProgressCircular Indeterminate="true" Size="Size.Small" aria-hidden="true" />
+        <MudText role="status">Loading...</MudText>
+    </MudStack>
 }
 else
 {
-    <div class="container">
-        @if (_isSub)
-        {
-            <div class="row mb-2 align-items-center">
-                <label class="col-sm-3 form-label" for="parentCategory">Category</label>
-                <div class="col-sm-9">
-                    <select id="parentCategory" class="form-select @(_invalidFields.Contains("CategoryId") ? "is-invalid" : "")" @bind="_categoryId"
-                            aria-required="true" aria-invalid="@(_invalidFields.Contains("CategoryId") ? "true" : null)">
-                        <option value="0">Choose a category</option>
+    <MudStack Spacing="3">
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudStack Spacing="2">
+                @if (_isSub)
+                {
+                    <MudSelect T="int" @bind-Value="_categoryId" Label="Category" Variant="Variant.Outlined"
+                               Required="true" Error="@_invalidFields.Contains("CategoryId")" ErrorText="Category is required">
+                        <MudSelectItem T="int" Value="0">Choose a category</MudSelectItem>
                         @foreach (var tree in _categories)
                         {
-                            <option value="@tree.Category.CategoryId">@tree.Category.Name</option>
+                            <MudSelectItem T="int" Value="@tree.Category.CategoryId">@tree.Category.Name</MudSelectItem>
                         }
-                    </select>
-                </div>
-            </div>
-        }
-        <div class="row mb-2 align-items-center">
-            <label class="col-sm-3 form-label" for="name">Name</label>
-            <div class="col-sm-9">
-                <input id="name" class="form-control @(_invalidFields.Contains("Name") ? "is-invalid" : "")" @bind="_name" maxlength="200"
-                       aria-required="true" aria-invalid="@(_invalidFields.Contains("Name") ? "true" : null)" />
-            </div>
-        </div>
-        <div class="row mb-3">
-            <label class="col-sm-3 form-label" for="description">Description</label>
-            <div class="col-sm-9">
-                <textarea id="description" class="form-control" rows="3" maxlength="500" @bind="_description"></textarea>
-            </div>
-        </div>
-    </div>
+                    </MudSelect>
+                }
+                <MudTextField T="string" @bind-Value="_name" Label="Name" Variant="Variant.Outlined" MaxLength="200"
+                              Required="true" Error="@_invalidFields.Contains("Name")" ErrorText="Name is required" />
+                <MudTextField T="string" @bind-Value="_description" Label="Description" Variant="Variant.Outlined" Lines="3" MaxLength="500" />
+            </MudStack>
+        </MudPaper>
 
-    <button type="button" class="btn btn-success" @onclick="Save" disabled="@_isSaving">
-        @if (_isSaving)
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Save" Disabled="@_isSaving"
+                       StartIcon="@(_isSaving ? null : MudBlazor.Icons.Material.Filled.Check)">
+                @if (_isSaving)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" aria-hidden="true" />
+                    <span>Saving...</span>
+                }
+                else
+                {
+                    <span>Save</span>
+                }
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Href="@NavigateUrl()">Cancel</MudButton>
+        </MudStack>
+        <span class="visually-hidden" role="status">@(_isSaving ? "Saving..." : "")</span>
+
+        @if (PageState.Action == "Edit" && _audit != null)
         {
-            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
-            <span>Saving...</span>
+            <AuditInfo CreatedBy="@_audit.CreatedBy" CreatedOn="@_audit.CreatedOn" ModifiedBy="@_audit.ModifiedBy" ModifiedOn="@_audit.ModifiedOn"></AuditInfo>
         }
-        else
-        {
-            <span class="oi oi-check me-1" aria-hidden="true"></span>
-            <span>Save</span>
-        }
-    </button>
-    <span class="visually-hidden" role="status">@(_isSaving ? "Saving..." : "")</span>
-    <NavLink class="btn btn-secondary" href="@NavigateUrl()">Cancel</NavLink>
-    <br /><br />
-    @if (PageState.Action == "Edit" && _audit != null)
-    {
-        <AuditInfo CreatedBy="@_audit.CreatedBy" CreatedOn="@_audit.CreatedOn" ModifiedBy="@_audit.ModifiedBy" ModifiedOn="@_audit.ModifiedOn"></AuditInfo>
-    }
+    </MudStack>
 }
 
 @code {
     public override SecurityAccessLevel SecurityAccessLevel => SecurityAccessLevel.Edit;
 
     public override string Actions => "Add,Edit";
+
+    // Edit pages render in the page's normal container, never the admin popup.
+    public override bool UseAdminContainer => false;
 
     public override string Title => _isSub ? "Manage Subcategory" : "Manage Category";
 

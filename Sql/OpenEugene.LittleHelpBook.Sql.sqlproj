@@ -73,5 +73,6 @@
   <ItemGroup>
     <None Include="Scripts\Migration_AttributesToCategories.sql" />
     <None Include="backup\little-help-book-data.bak" />
+    <None Include="backup\little-help-book-data.bacpac" />
   </ItemGroup>
 </Project>
