@@ -1,5 +1,8 @@
 <Solution>
   <Project Path="Server\OpenEugene.LittleHelpBook.Server.csproj" DefaultStartup="true" />
+  <Folder Name="/Sql/">
+    <Project Path="Sql/OpenEugene.LittleHelpBook.Sql.sqlproj" Type="42ea0dbd-9cf1-443e-919e-be9c484e4577" />
+  </Folder>
   <Project Path="Client\OpenEugene.LittleHelpBook.Client.csproj" />
   <Project Path="Shared\OpenEugene.LittleHelpBook.Shared.csproj" />
 </Solution>
