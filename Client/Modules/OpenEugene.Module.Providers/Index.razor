@@ -8,49 +8,46 @@
 
 @if (_providers == null)
 {
-    <p role="status"><em>Loading...</em></p>
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudProgressCircular Indeterminate="true" Size="Size.Small" aria-hidden="true" />
+        <MudText role="status">Loading...</MudText>
+    </MudStack>
 }
 else
 {
-    <div class="row mb-3 align-items-end">
-        <div class="col-sm-5">
-            <label class="form-label" for="filterCategory">Category</label>
-            <select id="filterCategory" class="form-select" @bind="_categoryId">
-                <option value="0">All categories</option>
-                @foreach (var tree in _categories)
-                {
-                    <option value="@tree.Category.CategoryId">@tree.Category.Name</option>
-                }
-            </select>
-        </div>
-        <div class="col-sm-7 text-sm-end mt-2 mt-sm-0">
-            <ActionLink Action="Add" Security="SecurityAccessLevel.Edit" Text="Add Provider" />
-        </div>
-    </div>
+    <MudStack Row="true" AlignItems="AlignItems.End" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap" Class="mb-3">
+        <MudSelect T="int" @bind-Value="_categoryId" Label="Category" Variant="Variant.Outlined" Style="min-width: 16rem;">
+            <MudSelectItem T="int" Value="0">All categories</MudSelectItem>
+            @foreach (var tree in _categories)
+            {
+                <MudSelectItem T="int" Value="@tree.Category.CategoryId">@tree.Category.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <ActionLink Action="Add" Security="SecurityAccessLevel.Edit" Text="Add Provider" />
+    </MudStack>
 
-    @if (FilteredProviders.Count != 0)
-    {
-        <Pager Items="@FilteredProviders">
-            <Header>
-                <th style="width: 1px;"><span class="visually-hidden">Edit</span></th>
-                <th style="width: 1px;"><span class="visually-hidden">Delete</span></th>
-                <th>Name</th>
-                <th>Categories</th>
-                <th>Active</th>
-            </Header>
-            <Row>
-                <td><ActionLink Action="Edit" Parameters="@($"id={context.ProviderId}")" /></td>
-                <td><ActionDialog Header="Delete Provider" Message="@($"Delete {context.Name}? This also removes its addresses, phone numbers and category links.")" Action="Delete" Security="SecurityAccessLevel.Edit" Class="btn btn-danger" OnClick="@(async () => await Delete(context))" Id="@context.ProviderId.ToString()" /></td>
-                <td>@context.Name</td>
-                <td>@CategoryNames(context)</td>
-                <td>@(context.IsActive ? "Yes" : "No")</td>
-            </Row>
-        </Pager>
-    }
-    else
-    {
-        <p>No providers to show.</p>
-    }
+    <MudTable Items="@FilteredProviders" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm" RowsPerPage="25">
+        <HeaderContent>
+            <MudTh Style="width: 1px;"><span class="visually-hidden">Edit</span></MudTh>
+            <MudTh Style="width: 1px;"><span class="visually-hidden">Delete</span></MudTh>
+            <MudTh>Name</MudTh>
+            <MudTh>Categories</MudTh>
+            <MudTh>Active</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd><ActionLink Action="Edit" Parameters="@($"id={context.ProviderId}")" /></MudTd>
+            <MudTd><ActionDialog Header="Delete Provider" Message="@($"Delete {context.Name}? This also removes its addresses, phone numbers and category links.")" Action="Delete" Security="SecurityAccessLevel.Edit" Class="btn btn-danger" OnClick="@(async () => await Delete(context))" Id="@context.ProviderId.ToString()" /></MudTd>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Categories">@CategoryNames(context)</MudTd>
+            <MudTd DataLabel="Active">@(context.IsActive ? "Yes" : "No")</MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No providers to show.</MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
 }
 
 @code {

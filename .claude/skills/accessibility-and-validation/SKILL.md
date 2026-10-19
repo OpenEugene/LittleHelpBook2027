@@ -44,6 +44,12 @@ Two classes of issues appear repeatedly across PWApps Blazor modules:
 
 ## Solution
 
+> **MudBlazor:** the examples below use plain Bootstrap markup. With MudBlazor
+> components, set `Required`, `Error` and `ErrorText` instead of `is-invalid` /
+> `aria-invalid`. Give every `MudIconButton` an `aria-label`. Material icons are
+> decorative SVGs, so they need no `aria-hidden`. The named-field message,
+> scroll-to-top and `role="status"` patterns still apply.
+
 ### 1. State Fields
 
 ```csharp

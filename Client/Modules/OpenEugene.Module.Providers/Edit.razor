@@ -8,172 +8,120 @@
 
 @if (!_isLoaded)
 {
-    <p role="status"><em>Loading...</em></p>
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudProgressCircular Indeterminate="true" Size="Size.Small" aria-hidden="true" />
+        <MudText role="status">Loading...</MudText>
+    </MudStack>
 }
 else
 {
-    <div class="container">
-        <div class="row mb-2 align-items-center">
-            <label class="col-sm-3 form-label" for="name">Name</label>
-            <div class="col-sm-9">
-                <input id="name" class="form-control @(_invalidFields.Contains("Name") ? "is-invalid" : "")" @bind="_detail.Provider.Name"
-                       maxlength="200" aria-required="true" aria-invalid="@(_invalidFields.Contains("Name") ? "true" : null)" />
-            </div>
-        </div>
-        <div class="row mb-2">
-            <label class="col-sm-3 form-label" for="description">Description</label>
-            <div class="col-sm-9">
-                <textarea id="description" class="form-control" rows="4" maxlength="2000" @bind="_detail.Provider.Description"></textarea>
-            </div>
-        </div>
-        <div class="row mb-2 align-items-center">
-            <label class="col-sm-3 form-label" for="webAddress">Website</label>
-            <div class="col-sm-9">
-                <input id="webAddress" class="form-control" maxlength="500" @bind="_detail.Provider.WebAddress" />
-            </div>
-        </div>
-        <div class="row mb-2 align-items-center">
-            <label class="col-sm-3 form-label" for="emailAddress">Email</label>
-            <div class="col-sm-9">
-                <input id="emailAddress" type="email" class="form-control" maxlength="100" @bind="_detail.Provider.EmailAddress" />
-            </div>
-        </div>
-        <div class="row mb-2 align-items-center">
-            <label class="col-sm-3 form-label" for="hours">Hours</label>
-            <div class="col-sm-9">
-                <input id="hours" class="form-control" maxlength="500" @bind="_detail.Provider.HoursOfOperation" />
-            </div>
-        </div>
-        <div class="row mb-3">
-            <div class="col-sm-9 offset-sm-3">
-                <div class="form-check">
-                    <input id="isActive" type="checkbox" class="form-check-input" @bind="_detail.Provider.IsActive" />
-                    <label class="form-check-label" for="isActive">Active</label>
-                </div>
-            </div>
-        </div>
+    <MudStack Spacing="4">
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudStack Spacing="2">
+                <MudTextField T="string" @bind-Value="_detail.Provider.Name" Label="Name" Variant="Variant.Outlined" MaxLength="200"
+                              Required="true" Error="@_invalidFields.Contains("Name")" ErrorText="Name is required" />
+                <MudTextField T="string" @bind-Value="_detail.Provider.Description" Label="Description" Variant="Variant.Outlined" Lines="4" MaxLength="2000" />
+                <MudTextField T="string" @bind-Value="_detail.Provider.WebAddress" Label="Website" Variant="Variant.Outlined" MaxLength="500" />
+                <MudTextField T="string" @bind-Value="_detail.Provider.EmailAddress" Label="Email" Variant="Variant.Outlined" InputType="InputType.Email" MaxLength="100" />
+                <MudTextField T="string" @bind-Value="_detail.Provider.HoursOfOperation" Label="Hours" Variant="Variant.Outlined" MaxLength="500" />
+                <MudCheckBox T="bool" @bind-Value="_detail.Provider.IsActive" Label="Active" />
+            </MudStack>
+        </MudPaper>
 
-        <h5>Addresses</h5>
-        @for (int i = 0; i < _detail.Addresses.Count; i++)
-        {
-            var index = i;
-            var address = _detail.Addresses[index];
-            <fieldset class="border rounded p-2 mb-2">
-                <legend class="fs-6 w-auto px-1">Address @(index + 1)</legend>
-                <div class="row g-2">
-                    <div class="col-sm-6">
-                        <label class="form-label" for="@($"address1-{index}")">Street</label>
-                        <input id="@($"address1-{index}")" class="form-control" maxlength="120" @bind="address.Address1" />
-                    </div>
-                    <div class="col-sm-6">
-                        <label class="form-label" for="@($"address2-{index}")">Street (line 2)</label>
-                        <input id="@($"address2-{index}")" class="form-control" maxlength="120" @bind="address.Address2" />
-                    </div>
-                    <div class="col-sm-5">
-                        <label class="form-label" for="@($"city-{index}")">City</label>
-                        <input id="@($"city-{index}")" class="form-control" maxlength="100" @bind="address.City" />
-                    </div>
-                    <div class="col-sm-2">
-                        <label class="form-label" for="@($"state-{index}")">State</label>
-                        <input id="@($"state-{index}")" class="form-control" maxlength="2" @bind="address.State" />
-                    </div>
-                    <div class="col-sm-5">
-                        <label class="form-label" for="@($"postal-{index}")">Postal code</label>
-                        <input id="@($"postal-{index}")" class="form-control" maxlength="16" @bind="address.PostalCode" />
-                    </div>
-                    <div class="col-12">
-                        <div class="form-check form-check-inline">
-                            <input id="@($"wheelchair-{index}")" type="checkbox" class="form-check-input" @bind="address.HasWheelchairAccess" />
-                            <label class="form-check-label" for="@($"wheelchair-{index}")">Wheelchair access</label>
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudText Typo="Typo.h6" Class="mb-2">Addresses</MudText>
+            @for (int i = 0; i < _detail.Addresses.Count; i++)
+            {
+                var index = i;
+                var address = _detail.Addresses[index];
+                <MudPaper Class="pa-3 mb-3" Outlined="true">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.subtitle1">Address @(index + 1)</MudText>
+                        <MudIconButton Icon="@MudBlazor.Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                       aria-label="@($"Remove address {index + 1}")" OnClick="() => _detail.Addresses.RemoveAt(index)" />
+                    </MudStack>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="address.Address1" Label="Street" Variant="Variant.Outlined" MaxLength="120" /></MudItem>
+                        <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="address.Address2" Label="Street (line 2)" Variant="Variant.Outlined" MaxLength="120" /></MudItem>
+                        <MudItem xs="12" sm="5"><MudTextField T="string" @bind-Value="address.City" Label="City" Variant="Variant.Outlined" MaxLength="100" /></MudItem>
+                        <MudItem xs="4" sm="2"><MudTextField T="string" @bind-Value="address.State" Label="State" Variant="Variant.Outlined" MaxLength="2" /></MudItem>
+                        <MudItem xs="8" sm="5"><MudTextField T="string" @bind-Value="address.PostalCode" Label="Postal code" Variant="Variant.Outlined" MaxLength="16" /></MudItem>
+                        <MudItem xs="12">
+                            <MudCheckBox T="bool" @bind-Value="address.HasWheelchairAccess" Label="Wheelchair access" />
+                            <MudCheckBox T="bool" @bind-Value="address.HasLanguageSupport" Label="Language support" />
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            }
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@MudBlazor.Icons.Material.Filled.Add"
+                       OnClick="() => _detail.Addresses.Add(new Address())">Add address</MudButton>
+        </MudPaper>
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudText Typo="Typo.h6" Class="mb-2">Phone numbers</MudText>
+            @for (int i = 0; i < _detail.PhoneNumbers.Count; i++)
+            {
+                var index = i;
+                var phone = _detail.PhoneNumbers[index];
+                <MudGrid Spacing="2" Class="mb-2">
+                    <MudItem xs="12" sm="4"><MudTextField T="string" @bind-Value="phone.Number" Label="Number" Variant="Variant.Outlined" MaxLength="500" /></MudItem>
+                    <MudItem xs="4" sm="2"><MudNumericField T="int?" @bind-Value="phone.Extension" Label="Ext." Variant="Variant.Outlined" HideSpinButtons="true" /></MudItem>
+                    <MudItem xs="6" sm="5"><MudTextField T="string" @bind-Value="phone.Description" Label="Description" Variant="Variant.Outlined" MaxLength="500" /></MudItem>
+                    <MudItem xs="2" sm="1" Class="d-flex align-center">
+                        <MudIconButton Icon="@MudBlazor.Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                       aria-label="@($"Remove phone number {index + 1}")" OnClick="() => _detail.PhoneNumbers.RemoveAt(index)" />
+                    </MudItem>
+                </MudGrid>
+            }
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@MudBlazor.Icons.Material.Filled.Add"
+                       OnClick="() => _detail.PhoneNumbers.Add(new PhoneNumber())">Add phone number</MudButton>
+        </MudPaper>
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudText Typo="Typo.h6">Categories</MudText>
+            <MudText Typo="Typo.body2" Class="mb-2">Choosing a subcategory also puts the provider in its category.</MudText>
+            @foreach (var tree in _categories)
+            {
+                var category = tree.Category;
+                <fieldset class="mb-2">
+                    <legend class="visually-hidden">@category.Name</legend>
+                    <MudCheckBox T="bool" Value="@_detail.CategoryIds.Contains(category.CategoryId)"
+                                 ValueChanged="@((bool value) => ToggleCategory(category.CategoryId, value))"
+                                 Label="@category.Name" />
+                    @foreach (var sub in tree.SubCategories)
+                    {
+                        <div class="ms-8">
+                            <MudCheckBox T="bool" Value="@_detail.SubCategoryIds.Contains(sub.SubCategoryId)"
+                                         ValueChanged="@((bool value) => ToggleSubCategory(sub, value))"
+                                         Label="@sub.Name" Size="Size.Small" />
                         </div>
-                        <div class="form-check form-check-inline">
-                            <input id="@($"language-{index}")" type="checkbox" class="form-check-input" @bind="address.HasLanguageSupport" />
-                            <label class="form-check-label" for="@($"language-{index}")">Language support</label>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger float-end" aria-label="@($"Remove address {index + 1}")" @onclick="() => _detail.Addresses.RemoveAt(index)">
-                            <span class="oi oi-trash" aria-hidden="true"></span>
-                        </button>
-                    </div>
-                </div>
-            </fieldset>
-        }
-        <button type="button" class="btn btn-sm btn-outline-primary mb-3" @onclick="() => _detail.Addresses.Add(new Address())">
-            <span class="oi oi-plus me-1" aria-hidden="true"></span> Add address
-        </button>
+                    }
+                </fieldset>
+            }
+        </MudPaper>
 
-        <h5>Phone numbers</h5>
-        @for (int i = 0; i < _detail.PhoneNumbers.Count; i++)
-        {
-            var index = i;
-            var phone = _detail.PhoneNumbers[index];
-            <div class="row g-2 mb-2 align-items-end">
-                <div class="col-sm-4">
-                    <label class="form-label" for="@($"number-{index}")">Number</label>
-                    <input id="@($"number-{index}")" class="form-control" maxlength="500" @bind="phone.Number" />
-                </div>
-                <div class="col-sm-2">
-                    <label class="form-label" for="@($"extension-{index}")">Ext.</label>
-                    <input id="@($"extension-{index}")" type="number" class="form-control" @bind="phone.Extension" />
-                </div>
-                <div class="col-sm-5">
-                    <label class="form-label" for="@($"phoneDescription-{index}")">Description</label>
-                    <input id="@($"phoneDescription-{index}")" class="form-control" maxlength="500" @bind="phone.Description" />
-                </div>
-                <div class="col-sm-1">
-                    <button type="button" class="btn btn-sm btn-outline-danger" aria-label="@($"Remove phone number {index + 1}")" @onclick="() => _detail.PhoneNumbers.RemoveAt(index)">
-                        <span class="oi oi-trash" aria-hidden="true"></span>
-                    </button>
-                </div>
-            </div>
-        }
-        <button type="button" class="btn btn-sm btn-outline-primary mb-3" @onclick="() => _detail.PhoneNumbers.Add(new PhoneNumber())">
-            <span class="oi oi-plus me-1" aria-hidden="true"></span> Add phone number
-        </button>
-
-        <h5>Categories</h5>
-        <p class="text-muted small">Choosing a subcategory also puts the provider in its category.</p>
-        @foreach (var tree in _categories)
-        {
-            var category = tree.Category;
-            <fieldset class="mb-2">
-                <div class="form-check">
-                    <input id="@($"category-{category.CategoryId}")" type="checkbox" class="form-check-input"
-                           checked="@_detail.CategoryIds.Contains(category.CategoryId)"
-                           @onchange="e => ToggleCategory(category.CategoryId, (bool)e.Value)" />
-                    <label class="form-check-label fw-semibold" for="@($"category-{category.CategoryId}")">@category.Name</label>
-                </div>
-                @foreach (var sub in tree.SubCategories)
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Save" Disabled="@_isSaving"
+                       StartIcon="@(_isSaving ? null : MudBlazor.Icons.Material.Filled.Check)">
+                @if (_isSaving)
                 {
-                    <div class="form-check ms-4">
-                        <input id="@($"subcategory-{sub.SubCategoryId}")" type="checkbox" class="form-check-input"
-                               checked="@_detail.SubCategoryIds.Contains(sub.SubCategoryId)"
-                               @onchange="e => ToggleSubCategory(sub, (bool)e.Value)" />
-                        <label class="form-check-label" for="@($"subcategory-{sub.SubCategoryId}")">@sub.Name</label>
-                    </div>
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" aria-hidden="true" />
+                    <span>Saving...</span>
                 }
-            </fieldset>
-        }
-    </div>
+                else
+                {
+                    <span>Save</span>
+                }
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Href="@NavigateUrl()">Cancel</MudButton>
+        </MudStack>
+        <span class="visually-hidden" role="status">@(_isSaving ? "Saving..." : "")</span>
 
-    <button type="button" class="btn btn-success" @onclick="Save" disabled="@_isSaving">
-        @if (_isSaving)
+        @if (PageState.Action == "Edit")
         {
-            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
-            <span>Saving...</span>
+            <AuditInfo CreatedBy="@_detail.Provider.CreatedBy" CreatedOn="@_detail.Provider.CreatedOn" ModifiedBy="@_detail.Provider.ModifiedBy" ModifiedOn="@_detail.Provider.ModifiedOn"></AuditInfo>
         }
-        else
-        {
-            <span class="oi oi-check me-1" aria-hidden="true"></span>
-            <span>Save</span>
-        }
-    </button>
-    <span class="visually-hidden" role="status">@(_isSaving ? "Saving..." : "")</span>
-    <NavLink class="btn btn-secondary" href="@NavigateUrl()">Cancel</NavLink>
-    <br /><br />
-    @if (PageState.Action == "Edit")
-    {
-        <AuditInfo CreatedBy="@_detail.Provider.CreatedBy" CreatedOn="@_detail.Provider.CreatedOn" ModifiedBy="@_detail.Provider.ModifiedBy" ModifiedOn="@_detail.Provider.ModifiedOn"></AuditInfo>
-    }
+    </MudStack>
 }
 
 @code {

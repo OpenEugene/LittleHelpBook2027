@@ -9,46 +9,48 @@
 
 @if (_categories == null)
 {
-    <p role="status"><em>Loading...</em></p>
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudProgressCircular Indeterminate="true" Size="Size.Small" aria-hidden="true" />
+        <MudText role="status">Loading...</MudText>
+    </MudStack>
 }
 else
 {
-    <ActionLink Action="Add" Security="SecurityAccessLevel.Edit" Text="Add Category" />
-    <br />
-    <br />
-    @if (_categories.Count != 0)
-    {
-        <ul class="list-unstyled">
+    <MudStack Spacing="3">
+        <div>
+            <ActionLink Action="Add" Security="SecurityAccessLevel.Edit" Text="Add Category" />
+        </div>
+        @if (_categories.Count != 0)
+        {
             @foreach (var tree in _categories)
             {
                 var category = tree.Category;
-                <li class="mb-3">
-                    <div class="d-flex align-items-center gap-2">
-                        <h5 class="mb-0 me-auto">@category.Name</h5>
+                <MudPaper Class="pa-3" Outlined="true">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudText Typo="Typo.h6" Class="flex-grow-1">@category.Name</MudText>
                         <ActionLink Action="Edit" Parameters="@($"id={category.CategoryId}")" />
                         <ActionDialog Header="Delete Category" Message="@($"Delete {category.Name}? This also deletes its subcategories and removes every provider from them.")" Action="Delete" Security="SecurityAccessLevel.Edit" Class="btn btn-danger" OnClick="@(async () => await DeleteCategory(category))" Id="@($"category-{category.CategoryId}")" />
+                    </MudStack>
+                    <MudDivider Class="my-2" />
+                    @foreach (var sub in tree.SubCategories)
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="ms-4 mb-1">
+                            <MudText Class="flex-grow-1">@sub.Name</MudText>
+                            <ActionLink Action="Edit" Parameters="@($"id={sub.SubCategoryId}&type=sub")" />
+                            <ActionDialog Header="Delete Subcategory" Message="@($"Delete {sub.Name}? Providers in it stay in {category.Name}.")" Action="Delete" Security="SecurityAccessLevel.Edit" Class="btn btn-danger" OnClick="@(async () => await DeleteSubCategory(sub))" Id="@($"subcategory-{sub.SubCategoryId}")" />
+                        </MudStack>
+                    }
+                    <div class="ms-4 mt-2">
+                        <ActionLink Action="Add" Security="SecurityAccessLevel.Edit" Parameters="@($"type=sub&categoryid={category.CategoryId}")" Text="@($"Add subcategory to {category.Name}")" Class="btn btn-sm btn-outline-primary" />
                     </div>
-                    <ul class="mt-2">
-                        @foreach (var sub in tree.SubCategories)
-                        {
-                            <li class="d-flex align-items-center gap-2 mb-1">
-                                <span class="me-auto">@sub.Name</span>
-                                <ActionLink Action="Edit" Parameters="@($"id={sub.SubCategoryId}&type=sub")" />
-                                <ActionDialog Header="Delete Subcategory" Message="@($"Delete {sub.Name}? Providers in it stay in {category.Name}.")" Action="Delete" Security="SecurityAccessLevel.Edit" Class="btn btn-danger" OnClick="@(async () => await DeleteSubCategory(sub))" Id="@($"subcategory-{sub.SubCategoryId}")" />
-                            </li>
-                        }
-                        <li class="mt-1">
-                            <ActionLink Action="Add" Security="SecurityAccessLevel.Edit" Parameters="@($"type=sub&categoryid={category.CategoryId}")" Text="@($"Add subcategory to {category.Name}")" Class="btn btn-sm btn-outline-primary" />
-                        </li>
-                    </ul>
-                </li>
+                </MudPaper>
             }
-        </ul>
-    }
-    else
-    {
-        <p>No categories to show.</p>
-    }
+        }
+        else
+        {
+            <MudText>No categories to show.</MudText>
+        }
+    </MudStack>
 }
 
 @code {
