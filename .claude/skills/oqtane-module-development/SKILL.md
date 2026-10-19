@@ -25,7 +25,7 @@ client/server split that maps to the Oqtane hosting model:
 | Client UI | `Client` | `ModuleBase` | Razor components rendered in the browser |
 | Client HTTP | `Client/Services` | `ServiceBase` | Typed HTTP clients that call server endpoints |
 | Server API | `Server/Controllers` | `ModuleControllerBase` | MVC controllers exposing REST endpoints |
-| Server Data | `Server/Repository` | *(interface + class)* | EF/ADO.NET data access, injected via DI |
+| Server Data | `Server/Repository` | *(interface + class)* | EF Core data access, injected via DI |
 
 ---
 
@@ -243,8 +243,9 @@ _growers = await GrowerService.GetAllGrowersAsync(ModuleState.ModuleId)
 
 - One interface + one implementation per module.
 - Register both in the module's server-side DI startup file.
-- Data access uses raw SQL or Dapper only — no EF migrations, no navigation
-  properties, no EF relationships.
+- Data access uses EF queries and LINQ — no EF migrations, no navigation
+  properties, no EF relationships. Repositories maintain referential
+  integrity themselves.
 - Table definitions go in the SQL projects under `dbo/tables/`.
 - Read existing repositories in `.oqtane-ref\Oqtane.Server\Repository\` as
   structural models.
