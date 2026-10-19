@@ -162,14 +162,14 @@ Per SC 4.1.3 (Status Messages), the loading paragraph needs `role="status"`:
 
 ### 7. Saving Button State
 
-Per SC 4.1.3, spinner needs `role="status"` and `aria-hidden="true"` on the icon;
-the visible text is the announced label:
+Keep a persistent `role="status"` region outside the disabled button to announce
+saving; hide only the decorative spinner from assistive technology:
 
 ```razor
 <button type="button" class="btn btn-primary" @onclick="Save" disabled="@_isSaving">
     @if (_isSaving)
     {
-        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
         <span>Saving...</span>
     }
     else
@@ -178,6 +178,7 @@ the visible text is the announced label:
         <span>Save</span>
     }
 </button>
+<span class="visually-hidden" role="status">@(_isSaving ? "Saving..." : "")</span>
 ```
 
 ---
