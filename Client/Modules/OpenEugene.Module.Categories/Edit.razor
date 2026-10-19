@@ -1,0 +1,205 @@
+@using OpenEugene.Module.Categories.Services
+@using OpenEugene.LittleHelpBook.Models
+
+@namespace OpenEugene.Module.Categories
+@inherits ModuleBase
+@inject ICategoryService CategoryService
+@inject NavigationManager NavigationManager
+
+@if (!_isLoaded)
+{
+    <p role="status"><em>Loading...</em></p>
+}
+else
+{
+    <div class="container">
+        @if (_isSub)
+        {
+            <div class="row mb-2 align-items-center">
+                <label class="col-sm-3 form-label" for="parentCategory">Category</label>
+                <div class="col-sm-9">
+                    <select id="parentCategory" class="form-select @(_invalidFields.Contains("CategoryId") ? "is-invalid" : "")" @bind="_categoryId"
+                            aria-required="true" aria-invalid="@(_invalidFields.Contains("CategoryId") ? "true" : null)">
+                        <option value="0">Choose a category</option>
+                        @foreach (var tree in _categories)
+                        {
+                            <option value="@tree.Category.CategoryId">@tree.Category.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        }
+        <div class="row mb-2 align-items-center">
+            <label class="col-sm-3 form-label" for="name">Name</label>
+            <div class="col-sm-9">
+                <input id="name" class="form-control @(_invalidFields.Contains("Name") ? "is-invalid" : "")" @bind="_name" maxlength="200"
+                       aria-required="true" aria-invalid="@(_invalidFields.Contains("Name") ? "true" : null)" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <label class="col-sm-3 form-label" for="description">Description</label>
+            <div class="col-sm-9">
+                <textarea id="description" class="form-control" rows="3" maxlength="500" @bind="_description"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" class="btn btn-success" @onclick="Save" disabled="@_isSaving">
+        @if (_isSaving)
+        {
+            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+            <span>Saving...</span>
+        }
+        else
+        {
+            <span class="oi oi-check me-1" aria-hidden="true"></span>
+            <span>Save</span>
+        }
+    </button>
+    <span class="visually-hidden" role="status">@(_isSaving ? "Saving..." : "")</span>
+    <NavLink class="btn btn-secondary" href="@NavigateUrl()">Cancel</NavLink>
+    <br /><br />
+    @if (PageState.Action == "Edit" && _audit != null)
+    {
+        <AuditInfo CreatedBy="@_audit.CreatedBy" CreatedOn="@_audit.CreatedOn" ModifiedBy="@_audit.ModifiedBy" ModifiedOn="@_audit.ModifiedOn"></AuditInfo>
+    }
+}
+
+@code {
+    public override SecurityAccessLevel SecurityAccessLevel => SecurityAccessLevel.Edit;
+
+    public override string Actions => "Add,Edit";
+
+    public override string Title => _isSub ? "Manage Subcategory" : "Manage Category";
+
+    private List<CategoryTree> _categories = new List<CategoryTree>();
+    private HashSet<string> _invalidFields = new();
+    private bool _isSub;
+    private bool _isLoaded;
+    private bool _isSaving;
+    private int _id;
+    private int _categoryId;
+    private string _name;
+    private string _description;
+    private Category _category;
+    private SubCategory _subCategory;
+    private ModelBase _audit;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_isLoaded)
+        {
+            return;
+        }
+        try
+        {
+            _isSub = PageState.QueryString.GetValueOrDefault("type") == "sub";
+            if (_isSub)
+            {
+                _categories = await CategoryService.GetCategoriesAsync(ModuleState.ModuleId) ?? new List<CategoryTree>();
+                if (int.TryParse(PageState.QueryString.GetValueOrDefault("categoryid"), out var parentId))
+                {
+                    _categoryId = parentId;
+                }
+            }
+
+            if (PageState.Action == "Edit" && PageState.QueryString.ContainsKey("id"))
+            {
+                _id = int.Parse(PageState.QueryString["id"]);
+                if (_isSub)
+                {
+                    _subCategory = await CategoryService.GetSubCategoryAsync(_id, ModuleState.ModuleId);
+                    if (_subCategory != null)
+                    {
+                        _categoryId = _subCategory.CategoryId;
+                        _name = _subCategory.Name;
+                        _description = _subCategory.Description;
+                        _audit = _subCategory;
+                    }
+                }
+                else
+                {
+                    _category = await CategoryService.GetCategoryAsync(_id, ModuleState.ModuleId);
+                    if (_category != null)
+                    {
+                        _name = _category.Name;
+                        _description = _category.Description;
+                        _audit = _category;
+                    }
+                }
+            }
+            _isLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Loading Category {Id} {Error}", PageState.QueryString.GetValueOrDefault("id"), ex.Message);
+            AddModuleMessage("The category could not be loaded.", MessageType.Error);
+        }
+    }
+
+    private async Task Save()
+    {
+        ClearModuleMessage();
+        _invalidFields.Clear();
+
+        var missing = new List<string>();
+        if (_isSub && _categoryId == 0) { _invalidFields.Add("CategoryId"); missing.Add("Category"); }
+        if (string.IsNullOrWhiteSpace(_name)) { _invalidFields.Add("Name"); missing.Add("Name"); }
+
+        if (missing.Count > 0)
+        {
+            AddModuleMessage($"Required: {string.Join(", ", missing)}", MessageType.Warning);
+            await ScrollToPageTop();
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            if (_isSub)
+            {
+                var subCategory = _subCategory ?? new SubCategory();
+                subCategory.CategoryId = _categoryId;
+                subCategory.Name = _name;
+                subCategory.Description = _description;
+                if (subCategory.SubCategoryId == 0)
+                {
+                    subCategory = await CategoryService.AddSubCategoryAsync(subCategory, ModuleState.ModuleId);
+                    await logger.LogInformation("SubCategory Added {SubCategoryId}", subCategory.SubCategoryId);
+                }
+                else
+                {
+                    await CategoryService.UpdateSubCategoryAsync(subCategory, ModuleState.ModuleId);
+                    await logger.LogInformation("SubCategory Updated {SubCategoryId}", subCategory.SubCategoryId);
+                }
+            }
+            else
+            {
+                var category = _category ?? new Category();
+                category.Name = _name;
+                category.Description = _description;
+                if (category.CategoryId == 0)
+                {
+                    category = await CategoryService.AddCategoryAsync(category, ModuleState.ModuleId);
+                    await logger.LogInformation("Category Added {CategoryId}", category.CategoryId);
+                }
+                else
+                {
+                    await CategoryService.UpdateCategoryAsync(category, ModuleState.ModuleId);
+                    await logger.LogInformation("Category Updated {CategoryId}", category.CategoryId);
+                }
+            }
+            NavigationManager.NavigateTo(NavigateUrl());
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Saving Category {Error}", ex.Message);
+            AddModuleMessage("The category could not be saved.", MessageType.Error);
+            await ScrollToPageTop();
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+}

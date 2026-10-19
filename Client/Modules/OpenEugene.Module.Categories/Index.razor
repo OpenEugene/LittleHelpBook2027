@@ -1,0 +1,107 @@
+@page "/categories"
+@attribute [Authorize(Roles = RoleNames.Admin)]
+@using OpenEugene.Module.Categories.Services
+@using OpenEugene.LittleHelpBook.Models
+
+@namespace OpenEugene.Module.Categories
+@inherits ModuleBase
+@inject ICategoryService CategoryService
+
+@if (_categories == null)
+{
+    <p role="status"><em>Loading...</em></p>
+}
+else
+{
+    <ActionLink Action="Add" Security="SecurityAccessLevel.Edit" Text="Add Category" />
+    <br />
+    <br />
+    @if (_categories.Count != 0)
+    {
+        <ul class="list-unstyled">
+            @foreach (var tree in _categories)
+            {
+                var category = tree.Category;
+                <li class="mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <h5 class="mb-0 me-auto">@category.Name</h5>
+                        <ActionLink Action="Edit" Parameters="@($"id={category.CategoryId}")" />
+                        <ActionDialog Header="Delete Category" Message="@($"Delete {category.Name}? This also deletes its subcategories and removes every provider from them.")" Action="Delete" Security="SecurityAccessLevel.Edit" Class="btn btn-danger" OnClick="@(async () => await DeleteCategory(category))" Id="@($"category-{category.CategoryId}")" />
+                    </div>
+                    <ul class="mt-2">
+                        @foreach (var sub in tree.SubCategories)
+                        {
+                            <li class="d-flex align-items-center gap-2 mb-1">
+                                <span class="me-auto">@sub.Name</span>
+                                <ActionLink Action="Edit" Parameters="@($"id={sub.SubCategoryId}&type=sub")" />
+                                <ActionDialog Header="Delete Subcategory" Message="@($"Delete {sub.Name}? Providers in it stay in {category.Name}.")" Action="Delete" Security="SecurityAccessLevel.Edit" Class="btn btn-danger" OnClick="@(async () => await DeleteSubCategory(sub))" Id="@($"subcategory-{sub.SubCategoryId}")" />
+                            </li>
+                        }
+                        <li class="mt-1">
+                            <ActionLink Action="Add" Security="SecurityAccessLevel.Edit" Parameters="@($"type=sub&categoryid={category.CategoryId}")" Text="@($"Add subcategory to {category.Name}")" Class="btn btn-sm btn-outline-primary" />
+                        </li>
+                    </ul>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>No categories to show.</p>
+    }
+}
+
+@code {
+    private List<CategoryTree> _categories;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        try
+        {
+            _categories = await CategoryService.GetCategoriesAsync(ModuleState.ModuleId) ?? new List<CategoryTree>();
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Loading Categories {Error}", ex.Message);
+            AddModuleMessage("Categories could not be loaded.", MessageType.Error);
+            _categories ??= new List<CategoryTree>();
+        }
+    }
+
+    private async Task DeleteCategory(Category category)
+    {
+        try
+        {
+            await CategoryService.DeleteCategoryAsync(category.CategoryId, ModuleState.ModuleId);
+            await logger.LogInformation("Category Deleted {CategoryId}", category.CategoryId);
+            await Load();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Deleting Category {CategoryId} {Error}", category.CategoryId, ex.Message);
+            AddModuleMessage($"{category.Name} could not be deleted.", MessageType.Error);
+        }
+    }
+
+    private async Task DeleteSubCategory(SubCategory sub)
+    {
+        try
+        {
+            await CategoryService.DeleteSubCategoryAsync(sub.SubCategoryId, ModuleState.ModuleId);
+            await logger.LogInformation("SubCategory Deleted {SubCategoryId}", sub.SubCategoryId);
+            await Load();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Deleting SubCategory {SubCategoryId} {Error}", sub.SubCategoryId, ex.Message);
+            AddModuleMessage($"{sub.Name} could not be deleted.", MessageType.Error);
+        }
+    }
+}

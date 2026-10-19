@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="Server\OpenEugene.LittleHelpBook.Server.csproj" DefaultStartup="true" />
+  <Project Path="Client\OpenEugene.LittleHelpBook.Client.csproj" />
+  <Project Path="Shared\OpenEugene.LittleHelpBook.Shared.csproj" />
+  <Project Path="Sql/OpenEugene.LittleHelpBook.Sql.sqlproj" Id="2c806cef-1a93-49c1-9e72-d5591fadd684">
+    <Build Solution="Release|*" />
+    <Deploy />
+  </Project>
+</Solution>

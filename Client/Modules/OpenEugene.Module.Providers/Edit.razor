@@ -1,0 +1,286 @@
+@using OpenEugene.Module.Providers.Services
+@using OpenEugene.LittleHelpBook.Models
+
+@namespace OpenEugene.Module.Providers
+@inherits ModuleBase
+@inject IProviderService ProviderService
+@inject NavigationManager NavigationManager
+
+@if (!_isLoaded)
+{
+    <p role="status"><em>Loading...</em></p>
+}
+else
+{
+    <div class="container">
+        <div class="row mb-2 align-items-center">
+            <label class="col-sm-3 form-label" for="name">Name</label>
+            <div class="col-sm-9">
+                <input id="name" class="form-control @(_invalidFields.Contains("Name") ? "is-invalid" : "")" @bind="_detail.Provider.Name"
+                       maxlength="200" aria-required="true" aria-invalid="@(_invalidFields.Contains("Name") ? "true" : null)" />
+            </div>
+        </div>
+        <div class="row mb-2">
+            <label class="col-sm-3 form-label" for="description">Description</label>
+            <div class="col-sm-9">
+                <textarea id="description" class="form-control" rows="4" maxlength="2000" @bind="_detail.Provider.Description"></textarea>
+            </div>
+        </div>
+        <div class="row mb-2 align-items-center">
+            <label class="col-sm-3 form-label" for="webAddress">Website</label>
+            <div class="col-sm-9">
+                <input id="webAddress" class="form-control" maxlength="500" @bind="_detail.Provider.WebAddress" />
+            </div>
+        </div>
+        <div class="row mb-2 align-items-center">
+            <label class="col-sm-3 form-label" for="emailAddress">Email</label>
+            <div class="col-sm-9">
+                <input id="emailAddress" type="email" class="form-control" maxlength="100" @bind="_detail.Provider.EmailAddress" />
+            </div>
+        </div>
+        <div class="row mb-2 align-items-center">
+            <label class="col-sm-3 form-label" for="hours">Hours</label>
+            <div class="col-sm-9">
+                <input id="hours" class="form-control" maxlength="500" @bind="_detail.Provider.HoursOfOperation" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-sm-9 offset-sm-3">
+                <div class="form-check">
+                    <input id="isActive" type="checkbox" class="form-check-input" @bind="_detail.Provider.IsActive" />
+                    <label class="form-check-label" for="isActive">Active</label>
+                </div>
+            </div>
+        </div>
+
+        <h5>Addresses</h5>
+        @for (int i = 0; i < _detail.Addresses.Count; i++)
+        {
+            var index = i;
+            var address = _detail.Addresses[index];
+            <fieldset class="border rounded p-2 mb-2">
+                <legend class="fs-6 w-auto px-1">Address @(index + 1)</legend>
+                <div class="row g-2">
+                    <div class="col-sm-6">
+                        <label class="form-label" for="@($"address1-{index}")">Street</label>
+                        <input id="@($"address1-{index}")" class="form-control" maxlength="120" @bind="address.Address1" />
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label" for="@($"address2-{index}")">Street (line 2)</label>
+                        <input id="@($"address2-{index}")" class="form-control" maxlength="120" @bind="address.Address2" />
+                    </div>
+                    <div class="col-sm-5">
+                        <label class="form-label" for="@($"city-{index}")">City</label>
+                        <input id="@($"city-{index}")" class="form-control" maxlength="100" @bind="address.City" />
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label" for="@($"state-{index}")">State</label>
+                        <input id="@($"state-{index}")" class="form-control" maxlength="2" @bind="address.State" />
+                    </div>
+                    <div class="col-sm-5">
+                        <label class="form-label" for="@($"postal-{index}")">Postal code</label>
+                        <input id="@($"postal-{index}")" class="form-control" maxlength="16" @bind="address.PostalCode" />
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check form-check-inline">
+                            <input id="@($"wheelchair-{index}")" type="checkbox" class="form-check-input" @bind="address.HasWheelchairAccess" />
+                            <label class="form-check-label" for="@($"wheelchair-{index}")">Wheelchair access</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input id="@($"language-{index}")" type="checkbox" class="form-check-input" @bind="address.HasLanguageSupport" />
+                            <label class="form-check-label" for="@($"language-{index}")">Language support</label>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger float-end" aria-label="@($"Remove address {index + 1}")" @onclick="() => _detail.Addresses.RemoveAt(index)">
+                            <span class="oi oi-trash" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                </div>
+            </fieldset>
+        }
+        <button type="button" class="btn btn-sm btn-outline-primary mb-3" @onclick="() => _detail.Addresses.Add(new Address())">
+            <span class="oi oi-plus me-1" aria-hidden="true"></span> Add address
+        </button>
+
+        <h5>Phone numbers</h5>
+        @for (int i = 0; i < _detail.PhoneNumbers.Count; i++)
+        {
+            var index = i;
+            var phone = _detail.PhoneNumbers[index];
+            <div class="row g-2 mb-2 align-items-end">
+                <div class="col-sm-4">
+                    <label class="form-label" for="@($"number-{index}")">Number</label>
+                    <input id="@($"number-{index}")" class="form-control" maxlength="500" @bind="phone.Number" />
+                </div>
+                <div class="col-sm-2">
+                    <label class="form-label" for="@($"extension-{index}")">Ext.</label>
+                    <input id="@($"extension-{index}")" type="number" class="form-control" @bind="phone.Extension" />
+                </div>
+                <div class="col-sm-5">
+                    <label class="form-label" for="@($"phoneDescription-{index}")">Description</label>
+                    <input id="@($"phoneDescription-{index}")" class="form-control" maxlength="500" @bind="phone.Description" />
+                </div>
+                <div class="col-sm-1">
+                    <button type="button" class="btn btn-sm btn-outline-danger" aria-label="@($"Remove phone number {index + 1}")" @onclick="() => _detail.PhoneNumbers.RemoveAt(index)">
+                        <span class="oi oi-trash" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </div>
+        }
+        <button type="button" class="btn btn-sm btn-outline-primary mb-3" @onclick="() => _detail.PhoneNumbers.Add(new PhoneNumber())">
+            <span class="oi oi-plus me-1" aria-hidden="true"></span> Add phone number
+        </button>
+
+        <h5>Categories</h5>
+        <p class="text-muted small">Choosing a subcategory also puts the provider in its category.</p>
+        @foreach (var tree in _categories)
+        {
+            var category = tree.Category;
+            <fieldset class="mb-2">
+                <div class="form-check">
+                    <input id="@($"category-{category.CategoryId}")" type="checkbox" class="form-check-input"
+                           checked="@_detail.CategoryIds.Contains(category.CategoryId)"
+                           @onchange="e => ToggleCategory(category.CategoryId, (bool)e.Value)" />
+                    <label class="form-check-label fw-semibold" for="@($"category-{category.CategoryId}")">@category.Name</label>
+                </div>
+                @foreach (var sub in tree.SubCategories)
+                {
+                    <div class="form-check ms-4">
+                        <input id="@($"subcategory-{sub.SubCategoryId}")" type="checkbox" class="form-check-input"
+                               checked="@_detail.SubCategoryIds.Contains(sub.SubCategoryId)"
+                               @onchange="e => ToggleSubCategory(sub, (bool)e.Value)" />
+                        <label class="form-check-label" for="@($"subcategory-{sub.SubCategoryId}")">@sub.Name</label>
+                    </div>
+                }
+            </fieldset>
+        }
+    </div>
+
+    <button type="button" class="btn btn-success" @onclick="Save" disabled="@_isSaving">
+        @if (_isSaving)
+        {
+            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+            <span>Saving...</span>
+        }
+        else
+        {
+            <span class="oi oi-check me-1" aria-hidden="true"></span>
+            <span>Save</span>
+        }
+    </button>
+    <span class="visually-hidden" role="status">@(_isSaving ? "Saving..." : "")</span>
+    <NavLink class="btn btn-secondary" href="@NavigateUrl()">Cancel</NavLink>
+    <br /><br />
+    @if (PageState.Action == "Edit")
+    {
+        <AuditInfo CreatedBy="@_detail.Provider.CreatedBy" CreatedOn="@_detail.Provider.CreatedOn" ModifiedBy="@_detail.Provider.ModifiedBy" ModifiedOn="@_detail.Provider.ModifiedOn"></AuditInfo>
+    }
+}
+
+@code {
+    public override SecurityAccessLevel SecurityAccessLevel => SecurityAccessLevel.Edit;
+
+    public override string Actions => "Add,Edit";
+
+    public override string Title => "Manage Provider";
+
+    private ProviderDetail _detail = new ProviderDetail();
+    private List<CategoryTree> _categories = new List<CategoryTree>();
+    private HashSet<string> _invalidFields = new();
+    private bool _isLoaded;
+    private bool _isSaving;
+    private int _id;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_isLoaded)
+        {
+            return;
+        }
+        try
+        {
+            _categories = await ProviderService.GetCategoriesAsync(ModuleState.ModuleId) ?? new List<CategoryTree>();
+            if (PageState.Action == "Edit" && PageState.QueryString.ContainsKey("id"))
+            {
+                _id = int.Parse(PageState.QueryString["id"]);
+                _detail = await ProviderService.GetProviderAsync(_id, ModuleState.ModuleId) ?? new ProviderDetail();
+            }
+            _isLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Loading Provider {ProviderId} {Error}", PageState.QueryString.GetValueOrDefault("id"), ex.Message);
+            AddModuleMessage("The provider could not be loaded.", MessageType.Error);
+        }
+    }
+
+    private void ToggleCategory(int categoryId, bool isChecked)
+    {
+        if (isChecked)
+        {
+            if (!_detail.CategoryIds.Contains(categoryId)) _detail.CategoryIds.Add(categoryId);
+        }
+        else
+        {
+            _detail.CategoryIds.Remove(categoryId);
+            // A provider can't stay in a subcategory without its category.
+            var subIds = _categories.Where(item => item.Category.CategoryId == categoryId)
+                .SelectMany(item => item.SubCategories).Select(item => item.SubCategoryId);
+            _detail.SubCategoryIds.RemoveAll(id => subIds.Contains(id));
+        }
+    }
+
+    private void ToggleSubCategory(SubCategory sub, bool isChecked)
+    {
+        if (isChecked)
+        {
+            if (!_detail.SubCategoryIds.Contains(sub.SubCategoryId)) _detail.SubCategoryIds.Add(sub.SubCategoryId);
+            if (!_detail.CategoryIds.Contains(sub.CategoryId)) _detail.CategoryIds.Add(sub.CategoryId);
+        }
+        else
+        {
+            _detail.SubCategoryIds.Remove(sub.SubCategoryId);
+        }
+    }
+
+    private async Task Save()
+    {
+        ClearModuleMessage();
+        _invalidFields.Clear();
+
+        var missing = new List<string>();
+        if (string.IsNullOrWhiteSpace(_detail.Provider.Name)) { _invalidFields.Add("Name"); missing.Add("Name"); }
+
+        if (missing.Count > 0)
+        {
+            AddModuleMessage($"Required: {string.Join(", ", missing)}", MessageType.Warning);
+            await ScrollToPageTop();
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            if (PageState.Action == "Add")
+            {
+                _detail = await ProviderService.AddProviderAsync(_detail, ModuleState.ModuleId);
+                await logger.LogInformation("Provider Added {ProviderId}", _detail.Provider.ProviderId);
+            }
+            else
+            {
+                await ProviderService.UpdateProviderAsync(_detail, ModuleState.ModuleId);
+                await logger.LogInformation("Provider Updated {ProviderId}", _id);
+            }
+            NavigationManager.NavigateTo(NavigateUrl());
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Saving Provider {Error}", ex.Message);
+            AddModuleMessage("The provider could not be saved.", MessageType.Error);
+            await ScrollToPageTop();
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+}

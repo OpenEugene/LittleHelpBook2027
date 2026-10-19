@@ -1,0 +1,109 @@
+@page "/providers"
+@using OpenEugene.Module.Providers.Services
+@using OpenEugene.LittleHelpBook.Models
+
+@namespace OpenEugene.Module.Providers
+@inherits ModuleBase
+@inject IProviderService ProviderService
+
+@if (_providers == null)
+{
+    <p role="status"><em>Loading...</em></p>
+}
+else
+{
+    <div class="row mb-3 align-items-end">
+        <div class="col-sm-5">
+            <label class="form-label" for="filterCategory">Category</label>
+            <select id="filterCategory" class="form-select" @bind="_categoryId">
+                <option value="0">All categories</option>
+                @foreach (var tree in _categories)
+                {
+                    <option value="@tree.Category.CategoryId">@tree.Category.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-7 text-sm-end mt-2 mt-sm-0">
+            <ActionLink Action="Add" Security="SecurityAccessLevel.Edit" Text="Add Provider" />
+        </div>
+    </div>
+
+    @if (FilteredProviders.Count != 0)
+    {
+        <Pager Items="@FilteredProviders">
+            <Header>
+                <th style="width: 1px;"><span class="visually-hidden">Edit</span></th>
+                <th style="width: 1px;"><span class="visually-hidden">Delete</span></th>
+                <th>Name</th>
+                <th>Categories</th>
+                <th>Active</th>
+            </Header>
+            <Row>
+                <td><ActionLink Action="Edit" Parameters="@($"id={context.ProviderId}")" /></td>
+                <td><ActionDialog Header="Delete Provider" Message="@($"Delete {context.Name}? This also removes its addresses, phone numbers and category links.")" Action="Delete" Security="SecurityAccessLevel.Edit" Class="btn btn-danger" OnClick="@(async () => await Delete(context))" Id="@context.ProviderId.ToString()" /></td>
+                <td>@context.Name</td>
+                <td>@CategoryNames(context)</td>
+                <td>@(context.IsActive ? "Yes" : "No")</td>
+            </Row>
+        </Pager>
+    }
+    else
+    {
+        <p>No providers to show.</p>
+    }
+}
+
+@code {
+    private List<ProviderListItem> _providers;
+    private List<CategoryTree> _categories = new List<CategoryTree>();
+    private Dictionary<int, string> _categoryNames = new Dictionary<int, string>();
+    private int _categoryId;
+
+    private List<ProviderListItem> FilteredProviders =>
+        _categoryId == 0 ? _providers : _providers.Where(item => item.CategoryIds.Contains(_categoryId)).ToList();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        try
+        {
+            _categories = await ProviderService.GetCategoriesAsync(ModuleState.ModuleId) ?? new List<CategoryTree>();
+            _categoryNames = _categories.ToDictionary(item => item.Category.CategoryId, item => item.Category.Name);
+            _providers = await ProviderService.GetProvidersAsync(ModuleState.ModuleId) ?? new List<ProviderListItem>();
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Loading Providers {Error}", ex.Message);
+            AddModuleMessage("Providers could not be loaded.", MessageType.Error);
+            _providers ??= new List<ProviderListItem>();
+        }
+    }
+
+    private string CategoryNames(ProviderListItem provider)
+    {
+        return string.Join(", ", provider.CategoryIds
+            .Where(id => _categoryNames.ContainsKey(id))
+            .Select(id => _categoryNames[id])
+            .OrderBy(name => name));
+    }
+
+    private async Task Delete(ProviderListItem provider)
+    {
+        try
+        {
+            await ProviderService.DeleteProviderAsync(provider.ProviderId, ModuleState.ModuleId);
+            await logger.LogInformation("Provider Deleted {ProviderId}", provider.ProviderId);
+            await Load();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Deleting Provider {ProviderId} {Error}", provider.ProviderId, ex.Message);
+            AddModuleMessage($"{provider.Name} could not be deleted.", MessageType.Error);
+        }
+    }
+}
