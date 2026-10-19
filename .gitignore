@@ -426,3 +426,18 @@ FodyWeavers.xsd
 
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
+
+# Oqtane (from Oqtane Application Template)
+artifacts/
+.vscode/
+*.binlog
+Server/appsettings.json
+Server/Data
+Server/Properties/PublishProfiles/FolderProfile.pubxml
+Server/Content
+Server/Content/Log
+Server/Packages
+Server/wwwroot/Content
+Server/wwwroot/Packages/*.log
+Server/wwwroot/_content/*
+!Server/wwwroot/_content/Placeholder.txt
