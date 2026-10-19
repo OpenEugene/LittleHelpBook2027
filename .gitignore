@@ -441,3 +441,6 @@ Server/wwwroot/Content
 Server/wwwroot/Packages/*.log
 Server/wwwroot/_content/*
 !Server/wwwroot/_content/Placeholder.txt
+
+# Local Oqtane framework reference (see oqtane-module-development skill)
+.oqtane-ref/
