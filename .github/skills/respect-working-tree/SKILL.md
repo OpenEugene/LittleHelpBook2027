@@ -6,7 +6,6 @@ description: |
   edits that the user intentionally made themselves — the agent should trust the working tree
   as the source of truth, not its own session history. Also covers the pattern of always
   reading a file before editing to avoid fighting over state.
-author: Skiller
 version: 1.0.0
 date: 2026-02-28
 ---

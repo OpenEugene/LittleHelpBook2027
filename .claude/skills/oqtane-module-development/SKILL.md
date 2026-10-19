@@ -8,7 +8,6 @@ description: |
   framework reference clone at .oqtane-ref/ rather than guessed or assumed.
   Use this any time you create, edit, or review any Oqtane module component,
   service, controller, or repository in the PWApps workspace.
-author: Skiller
 version: 1.3.0
 date: 2026-03-15
 ---

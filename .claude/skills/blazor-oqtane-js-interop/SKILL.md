@@ -3,7 +3,6 @@ name: blazor-oqtane-js-interop
 description: |
   How to correctly implement and load JavaScript interop in Oqtane Blazor modules,
   avoiding "undefined" errors when calling JS functions from Blazor components.
-author: Skiller
 version: 1.0.0
 date: 2026-02-25
 ---

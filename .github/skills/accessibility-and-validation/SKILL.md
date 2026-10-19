@@ -9,7 +9,6 @@ description: |
   role=status, table actions column visually-hidden headers, and filter label/id
   pairing. Use this any time you write, review, or audit any Blazor page or form
   that inherits ModuleBase — including index pages, edit forms, and new-record forms.
-author: Skiller
 version: 1.1.0
 date: 2025-07-10
 ---
