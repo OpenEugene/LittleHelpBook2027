@@ -1,0 +1,90 @@
+@using OpenEugene.LittleHelpBook.Models
+
+@namespace OpenEugene.Module.Providers
+
+<form class="lhb-address-form" data-lhb-address-form data-lhb-mapbox-token="@MapboxAccessToken" @onsubmit:preventDefault>
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="6">
+            <label class="lhb-address-label" for="@FieldId("street")">Street</label>
+            <div class="lhb-address-autofill">
+                <input id="@FieldId("street")" name="@FieldName("street")" type="text"
+                       class="lhb-address-input" maxlength="120"
+                       autocomplete="address-line1"
+                       data-address-field="address1"
+                       @bind="Address.Address1" />
+                @if (!string.IsNullOrWhiteSpace(MapboxAccessToken))
+                {
+                    <div id="@FieldId("suggestions")" class="lhb-address-suggestions" data-lhb-address-suggestions hidden>
+                        <ul role="listbox" aria-label="Address suggestions"></ul>
+                        <div class="lhb-mapbox-attribution">Search by Mapbox</div>
+                    </div>
+                    <div class="lhb-address-status" data-lhb-address-status role="status"></div>
+                }
+            </div>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <label class="lhb-address-label" for="@FieldId("street2")">Street (line 2)</label>
+            <input id="@FieldId("street2")" name="@FieldName("street2")" type="text"
+                   class="lhb-address-input" maxlength="120"
+                   autocomplete="address-line2"
+                   data-address-field="address2"
+                   @bind="Address.Address2" />
+        </MudItem>
+        <MudItem xs="12" sm="5">
+            <label class="lhb-address-label" for="@FieldId("city")">City</label>
+            <input id="@FieldId("city")" name="@FieldName("city")" type="text"
+                   class="lhb-address-input" maxlength="100"
+                   autocomplete="address-level2"
+                   data-address-field="city"
+                   @bind="Address.City" />
+        </MudItem>
+        <MudItem xs="4" sm="2">
+            <label class="lhb-address-label" for="@FieldId("state")">State</label>
+            <input id="@FieldId("state")" name="@FieldName("state")" type="text"
+                   class="lhb-address-input text-uppercase" maxlength="2"
+                   autocomplete="address-level1"
+                   data-address-field="state"
+                   @bind="Address.State" />
+        </MudItem>
+        <MudItem xs="8" sm="5">
+            <label class="lhb-address-label" for="@FieldId("postal")">Postal code</label>
+            <input id="@FieldId("postal")" name="@FieldName("postal")" type="text"
+                   class="lhb-address-input" maxlength="16"
+                   autocomplete="postal-code"
+                   data-address-field="postalCode"
+                   @bind="Address.PostalCode" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudCheckBox T="bool" @bind-Value="Address.HasWheelchairAccess" Label="Wheelchair access" />
+            <MudCheckBox T="bool" @bind-Value="Address.HasLanguageSupport" Label="Language support" />
+        </MudItem>
+        @if (Address.Latitude.HasValue && Address.Longitude.HasValue)
+        {
+            <MudItem xs="12">
+                <MudText Typo="Typo.caption" role="status">
+                    Coordinates: @Address.Latitude.Value.ToString("0.######"), @Address.Longitude.Value.ToString("0.######")
+                </MudText>
+            </MudItem>
+        }
+    </MudGrid>
+
+    <input type="hidden" data-address-field="longitude" @bind="Address.Longitude" />
+    <input type="hidden" data-address-field="latitude" @bind="Address.Latitude" />
+    <input type="hidden" data-address-field="geocoding" @bind="Address.Geocoding" />
+</form>
+
+@code {
+    [Parameter, EditorRequired]
+    public Address Address { get; set; }
+
+    [Parameter]
+    public int Index { get; set; }
+
+    [Parameter]
+    public string MapboxAccessToken { get; set; } = string.Empty;
+
+    private string FieldId(string field) => $"provider-address-{Index}-{field}";
+
+    private string FieldName(string field) => $"provider-address-{Index}-{field}";
+
+}
