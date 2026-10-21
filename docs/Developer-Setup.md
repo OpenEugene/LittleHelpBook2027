@@ -50,7 +50,13 @@ Go to **Admin → Site Settings** and confirm:
 
 A fresh install gets both from the defaults. An existing site must be changed by hand. Save, then reload the page.
 
-## 5. Find the pages
+## 5. Configure Mapbox address suggestions
+
+Open the **Settings** for the Providers module and enter a URL-restricted Mapbox public access token (a token beginning with `pk.`). Save the settings, then reload the provider editor. The token is sent to the browser, so do not use a secret token.
+
+Without a token, provider addresses can still be entered manually, but address suggestions and automatic coordinates are disabled.
+
+## 6. Find the pages
 
 The modules create their own pages:
 

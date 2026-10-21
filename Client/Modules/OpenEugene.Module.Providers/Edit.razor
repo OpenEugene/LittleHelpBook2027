@@ -4,6 +4,7 @@
 @namespace OpenEugene.Module.Providers
 @inherits ModuleBase
 @inject IProviderService ProviderService
+@inject ISettingService SettingService
 @inject NavigationManager NavigationManager
 
 @if (!_isLoaded)
@@ -30,27 +31,23 @@ else
 
         <MudPaper Class="pa-4" Outlined="true">
             <MudText Typo="Typo.h6" Class="mb-2">Addresses</MudText>
+            @if (string.IsNullOrWhiteSpace(_mapboxAccessToken))
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+                    Add a Mapbox public access token in this module's settings to enable address suggestions and automatic coordinates.
+                </MudAlert>
+            }
             @for (int i = 0; i < _detail.Addresses.Count; i++)
             {
                 var index = i;
                 var address = _detail.Addresses[index];
-                <MudPaper Class="pa-3 mb-3" Outlined="true">
+                <MudPaper @key="address" Class="pa-3 mb-3" Outlined="true">
                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                         <MudText Typo="Typo.subtitle1">Address @(index + 1)</MudText>
                         <MudIconButton Icon="@MudBlazor.Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
                                        aria-label="@($"Remove address {index + 1}")" OnClick="() => _detail.Addresses.RemoveAt(index)" />
                     </MudStack>
-                    <MudGrid Spacing="2">
-                        <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="address.Address1" Label="Street" Variant="Variant.Outlined" MaxLength="120" /></MudItem>
-                        <MudItem xs="12" sm="6"><MudTextField T="string" @bind-Value="address.Address2" Label="Street (line 2)" Variant="Variant.Outlined" MaxLength="120" /></MudItem>
-                        <MudItem xs="12" sm="5"><MudTextField T="string" @bind-Value="address.City" Label="City" Variant="Variant.Outlined" MaxLength="100" /></MudItem>
-                        <MudItem xs="4" sm="2"><MudTextField T="string" @bind-Value="address.State" Label="State" Variant="Variant.Outlined" MaxLength="2" /></MudItem>
-                        <MudItem xs="8" sm="5"><MudTextField T="string" @bind-Value="address.PostalCode" Label="Postal code" Variant="Variant.Outlined" MaxLength="16" /></MudItem>
-                        <MudItem xs="12">
-                            <MudCheckBox T="bool" @bind-Value="address.HasWheelchairAccess" Label="Wheelchair access" />
-                            <MudCheckBox T="bool" @bind-Value="address.HasLanguageSupport" Label="Language support" />
-                        </MudItem>
-                    </MudGrid>
+                    <AddressEditor Address="address" Index="index" MapboxAccessToken="@_mapboxAccessToken" />
                 </MudPaper>
             }
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@MudBlazor.Icons.Material.Filled.Add"
@@ -137,6 +134,7 @@ else
     private ProviderDetail _detail = new ProviderDetail();
     private List<CategoryTree> _categories = new List<CategoryTree>();
     private HashSet<string> _invalidFields = new();
+    private string _mapboxAccessToken = string.Empty;
     private bool _isLoaded;
     private bool _isSaving;
     private int _id;
@@ -149,6 +147,7 @@ else
         }
         try
         {
+            _mapboxAccessToken = SettingService.GetSetting(ModuleState.Settings, "MapboxAccessToken", string.Empty);
             _categories = await ProviderService.GetCategoriesAsync(ModuleState.ModuleId) ?? new List<CategoryTree>();
             if (PageState.Action == "Edit" && PageState.QueryString.ContainsKey("id"))
             {
