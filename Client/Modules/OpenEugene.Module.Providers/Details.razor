@@ -4,6 +4,7 @@
 @namespace OpenEugene.Module.Providers
 @inherits ModuleBase
 @inject IProviderService ProviderService
+@inject ISettingService SettingService
 @inject NavigationManager NavigationManager
 
 @if (!_isLoaded)
@@ -80,6 +81,26 @@ else
                     </div>
                 }
             </MudPaper>
+
+            @if (!string.IsNullOrWhiteSpace(_mapboxAccessToken) && MappedAddresses.Any())
+            {
+                <MudExpansionPanels>
+                    <MudExpansionPanel Text="Map"
+                                       Icon="@MudBlazor.Icons.Material.Filled.Map"
+                                       Expanded="true"
+                                       KeepContentAlive="true">
+                        <div id="@DetailMapId"
+                             class="lhb-provider-map"
+                             style="height: 18rem;"
+                             role="region"
+                             aria-label="@($"Map of {provider.Name}")"
+                             data-lhb-provider-map
+                             data-lhb-mapbox-token="@_mapboxAccessToken"
+                             data-lhb-provider-pins="@DetailMapPinsJson">
+                        </div>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            }
         }
 
         @if (_detail.CategoryIds.Any())
@@ -115,12 +136,40 @@ else
 
     private ProviderDetail _detail;
     private List<CategoryTree> _categories = new List<CategoryTree>();
+    private string _mapboxAccessToken = string.Empty;
     private bool _isLoaded;
+
+    private string DetailMapId => $"lhb-provider-detail-map-{ModuleState.ModuleId}";
+
+    private IEnumerable<Address> MappedAddresses => _detail?.Addresses.Where(address =>
+        address.IsActive &&
+        address.Latitude.HasValue && address.Latitude.Value >= -90 && address.Latitude.Value <= 90 &&
+        address.Longitude.HasValue && address.Longitude.Value >= -180 && address.Longitude.Value <= 180)
+        ?? Enumerable.Empty<Address>();
+
+    private string DetailMapPinsJson => System.Text.Json.JsonSerializer.Serialize(
+        MappedAddresses.Select(address => new
+        {
+            providerId = _detail.Provider.ProviderId,
+            name = _detail.Provider.Name,
+            address = FormatAddress(address),
+            longitude = address.Longitude.Value,
+            latitude = address.Latitude.Value,
+            categories = _categories
+                .Where(tree => _detail.CategoryIds.Contains(tree.Category.CategoryId))
+                .Select(tree => tree.Category.Name),
+            subcategories = _categories
+                .SelectMany(tree => tree.SubCategories)
+                .Where(subcategory => _detail.SubCategoryIds.Contains(subcategory.SubCategoryId))
+                .Select(subcategory => subcategory.Name),
+            url = NavigationManager.Uri
+        }));
 
     protected override async Task OnParametersSetAsync()
     {
         try
         {
+            _mapboxAccessToken = SettingService.GetSetting(ModuleState.Settings, "MapboxAccessToken", string.Empty);
             _categories = await ProviderService.GetCategoriesAsync(ModuleState.ModuleId) ?? new List<CategoryTree>();
             if (int.TryParse(PageState.QueryString.GetValueOrDefault("id"), out var id))
             {
@@ -137,6 +186,16 @@ else
 
     private static string WebsiteUrl(string address) =>
         address.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? address : $"https://{address}";
+
+    private static string FormatAddress(Address address) => string.Join(", ", new[]
+    {
+        address.Address1,
+        address.Address2,
+        address.Address3,
+        address.City,
+        address.State,
+        address.PostalCode
+    }.Where(value => !string.IsNullOrWhiteSpace(value)));
 
     private async Task Delete()
     {

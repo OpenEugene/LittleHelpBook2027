@@ -11,5 +11,6 @@ namespace OpenEugene.LittleHelpBook.Models
         public bool IsActive { get; set; }
         public List<int> CategoryIds { get; set; } = new List<int>();
         public List<int> SubCategoryIds { get; set; } = new List<int>();
+        public List<ProviderMapLocation> Locations { get; set; } = new List<ProviderMapLocation>();
     }
 }

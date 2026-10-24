@@ -42,6 +42,25 @@ namespace OpenEugene.Module.Providers.Repository
                 .ToList()
                 .GroupBy(item => item.ProviderId)
                 .ToDictionary(group => group.Key, group => group.Select(item => item.SubCategoryId).ToList());
+            var locations = db.Address.AsNoTracking()
+                .Where(item => item.IsActive && item.ProviderId.HasValue && item.Latitude.HasValue && item.Longitude.HasValue)
+                .ToList()
+                .Where(item => item.Latitude >= -90 && item.Latitude <= 90 && item.Longitude >= -180 && item.Longitude <= 180)
+                .GroupBy(item => item.ProviderId.Value)
+                .ToDictionary(group => group.Key, group => group.Select(item => new ProviderMapLocation
+                {
+                    AddressId = item.AddressId,
+                    Address = string.Join(", ", new[]
+                    {
+                        item.Address1,
+                        item.Address2,
+                        item.City,
+                        item.State,
+                        item.PostalCode
+                    }.Where(part => !string.IsNullOrWhiteSpace(part))),
+                    Longitude = item.Longitude.Value,
+                    Latitude = item.Latitude.Value
+                }).ToList());
 
             return db.Provider.AsNoTracking()
                 .OrderBy(item => item.Name)
@@ -52,7 +71,8 @@ namespace OpenEugene.Module.Providers.Repository
                     Name = item.Name,
                     IsActive = item.IsActive,
                     CategoryIds = categoryIds.TryGetValue(item.ProviderId, out var ids) ? ids : new List<int>(),
-                    SubCategoryIds = subCategoryIds.TryGetValue(item.ProviderId, out var subIds) ? subIds : new List<int>()
+                    SubCategoryIds = subCategoryIds.TryGetValue(item.ProviderId, out var subIds) ? subIds : new List<int>(),
+                    Locations = locations.TryGetValue(item.ProviderId, out var providerLocations) ? providerLocations : new List<ProviderMapLocation>()
                 })
                 .ToList();
         }

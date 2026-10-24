@@ -1,0 +1,49 @@
+@namespace OpenEugene.Module.Providers
+@inherits ModuleBase
+@implements Oqtane.Interfaces.ISettingsControl
+@inject ISettingService SettingService
+
+<div class="container">
+    <div class="row mb-2 align-items-center">
+        <label class="col-sm-3 col-form-label" for="mapboxAccessToken">Mapbox public access token</label>
+        <div class="col-sm-9">
+            <input id="mapboxAccessToken" type="text" class="form-control" maxlength="200"
+                   autocomplete="off" @bind="_mapboxAccessToken" />
+            <div class="form-text">
+                Use a URL-restricted public token beginning with <code>pk.</code>. The token is sent to browsers so address autofill can call Mapbox.
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public override string Title => "Provider Settings";
+
+    private string _mapboxAccessToken = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            _mapboxAccessToken = SettingService.GetSetting(ModuleState.Settings, "MapboxAccessToken", string.Empty);
+        }
+        catch (Exception ex)
+        {
+            AddModuleMessage(ex.Message, MessageType.Error);
+        }
+    }
+
+    public async Task UpdateSettings()
+    {
+        try
+        {
+            var settings = await SettingService.GetModuleSettingsAsync(ModuleState.ModuleId);
+            settings = SettingService.SetSetting(settings, "MapboxAccessToken", _mapboxAccessToken?.Trim() ?? string.Empty);
+            await SettingService.UpdateModuleSettingsAsync(settings, ModuleState.ModuleId);
+        }
+        catch (Exception ex)
+        {
+            AddModuleMessage(ex.Message, MessageType.Error);
+        }
+    }
+}
