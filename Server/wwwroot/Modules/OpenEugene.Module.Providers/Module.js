@@ -963,6 +963,8 @@ OpenEugene.LittleHelpBook.Providers.ProviderMap = (function () {
             userMarker: null
         };
         mapStates.set(element, state);
+        bindLocationControls(state);
+        renderNearbyList(state, parsePins(element));
         if (window.ResizeObserver) {
             state.resizeObserver = new ResizeObserver(function () {
                 map.resize();
@@ -971,7 +973,6 @@ OpenEugene.LittleHelpBook.Providers.ProviderMap = (function () {
         }
         map.addControl(new mapboxgl.NavigationControl(), "top-right");
         map.on("load", function () {
-            bindLocationControls(state);
             if (!state.controls) {
                 updateMarkers(element);
             } else if (!restoreUserLocation(state)) {

@@ -1,0 +1,264 @@
+@using OpenEugene.Module.Providers.Services
+@using OpenEugene.LittleHelpBook.Models
+
+@namespace OpenEugene.Module.Providers
+@inherits ModuleBase
+@inject IProviderService ProviderService
+@inject ISettingService SettingService
+
+@if (_providers == null)
+{
+    <MudStack Row="true" AlignItems="AlignItems.Center">
+        <MudProgressCircular Indeterminate="true" Size="Size.Small" aria-hidden="true" />
+        <MudText role="status">Loading provider map...</MudText>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap" Spacing="2">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.body1">Find nearby services and explore providers by location.</MudText>
+            </MudStack>
+            <MudButton Href="@NavigateUrl()"
+                       Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       StartIcon="@MudBlazor.Icons.Material.Filled.ViewList">
+                Provider list
+            </MudButton>
+        </MudStack>
+
+        @if (string.IsNullOrWhiteSpace(_mapboxAccessToken))
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                The provider map is not available because Mapbox has not been configured.
+            </MudAlert>
+        }
+        else
+        {
+            <MudPaper Class="lhb-provider-discovery" Elevation="1" Outlined="true" data-lhb-provider-discovery>
+                <MudStack Spacing="0">
+                    <MudStack Spacing="3" Class="pa-4 pa-sm-6" aria-labelledby="@SearchHeadingId">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.h5" id="@SearchHeadingId">Find help near you</MudText>
+                            <MudText Typo="Typo.body1">Choose a location and the kind of help you need. The map and nearby providers update together.</MudText>
+                        </MudStack>
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" md="6">
+                                <label class="lhb-address-label" for="@LocationInputId">Where are you now?</label>
+                                <div class="lhb-location-controls">
+                                    <div class="lhb-location-searchbox">
+                                        <input id="@LocationInputId" class="lhb-location-input" type="text" maxlength="256"
+                                               placeholder="Address, city, or ZIP code" autocomplete="off"
+                                               role="combobox" aria-autocomplete="list" aria-expanded="false"
+                                               aria-controls="@LocationSuggestionsId" aria-describedby="@LocationStatusId"
+                                               data-lhb-user-location-input />
+                                        <div id="@LocationSuggestionsId" class="lhb-location-suggestions" data-lhb-location-suggestions hidden>
+                                            <ul role="listbox" aria-label="Location suggestions"></ul>
+                                        </div>
+                                    </div>
+                                    <MudButton Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               StartIcon="@MudBlazor.Icons.Material.Filled.Search"
+                                               data-lhb-location-search>
+                                        Set location
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Primary"
+                                               StartIcon="@MudBlazor.Icons.Material.Filled.MyLocation"
+                                               data-lhb-device-location>
+                                        Use my location
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" data-lhb-clear-location hidden>Clear</MudButton>
+                                </div>
+                                <div id="@LocationStatusId" class="visually-hidden" role="status" data-lhb-user-location-status>
+                                    Checking for a saved or approximate location...
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudSelect T="int" Value="_categoryId" ValueChanged="OnCategoryChanged" Label="What do you need?" Variant="Variant.Outlined" FullWidth="true">
+                                    <MudSelectItem T="int" Value="0">All categories</MudSelectItem>
+                                    @foreach (var tree in _categories)
+                                    {
+                                        <MudSelectItem T="int" Value="@tree.Category.CategoryId">@tree.Category.Name</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudSelect T="int" @bind-Value="_subCategoryId" Label="More specifically" Variant="Variant.Outlined" FullWidth="true"
+                                           Disabled="@(_categoryId == 0)">
+                                    <MudSelectItem T="int" Value="0">All subcategories</MudSelectItem>
+                                    @foreach (var sub in SubCategories)
+                                    {
+                                        <MudSelectItem T="int" Value="@sub.SubCategoryId">@sub.Name</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                    </MudStack>
+                    <MudDivider Class="flex-grow-0" />
+                    <MudPaper Height="clamp(40rem, 78vh, 60rem)" Elevation="0" Square="true" Class="relative overflow-hidden" Style="isolation: isolate;">
+                        <MudDrawerContainer Class="mud-height-full overflow-hidden">
+                            <MudDrawer @bind-Open="_nearbyOpen"
+                                       id="@NearbyDrawerId"
+                                       Anchor="Anchor.Right"
+                                       Variant="DrawerVariant.Persistent"
+                                       Fixed="false"
+                                       Elevation="2"
+                                       Width="22rem"
+                                       Class="overflow-hidden">
+                                <MudStack Spacing="0" Class="mud-height-full overflow-hidden" aria-labelledby="@NearbyHeadingId">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="pa-4">
+                                        <MudText Typo="Typo.h5" id="@NearbyHeadingId">Nearby providers</MudText>
+                                        <MudIconButton Icon="@MudBlazor.Icons.Material.Filled.Close"
+                                                       OnClick="ToggleNearbyDrawer"
+                                                       Color="Color.Default"
+                                                       aria-label="Close nearby providers" />
+                                    </MudStack>
+                                    <MudDivider Class="flex-grow-0" />
+                                    <MudText Typo="Typo.body2" Class="pa-4" data-lhb-nearby-intro>
+                                        Choose a location to sort providers by distance.
+                                    </MudText>
+                                    <MudDivider Class="flex-grow-0" />
+                                    <MudSimpleTable Dense="true" Hover="true" FixedHeader="true" Square="true" Elevation="0" Class="flex-grow-1 overflow-auto">
+                                        <thead>
+                                            <tr>
+                                                <th>Provider</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody data-lhb-nearby-list aria-live="polite" aria-relevant="additions text">
+                                            <tr>
+                                                <td>Loading mapped providers...</td>
+                                            </tr>
+                                        </tbody>
+                                    </MudSimpleTable>
+                                    <MudDivider Class="flex-grow-0" />
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="pa-2 flex-grow-0" data-lhb-nearby-pager>
+                                        <MudText Typo="Typo.caption" data-lhb-nearby-page-status>0 providers</MudText>
+                                        <MudStack Row="true" Spacing="0">
+                                            <MudIconButton Icon="@MudBlazor.Icons.Material.Filled.ChevronLeft"
+                                                           Size="Size.Small"
+                                                           data-lhb-nearby-previous
+                                                           aria-label="Previous provider page" />
+                                            <MudIconButton Icon="@MudBlazor.Icons.Material.Filled.ChevronRight"
+                                                           Size="Size.Small"
+                                                           data-lhb-nearby-next
+                                                           aria-label="Next provider page" />
+                                        </MudStack>
+                                    </MudStack>
+                                </MudStack>
+                            </MudDrawer>
+
+                            <MudStack Spacing="0" Class="mud-height-full" aria-labelledby="@MapHeadingId">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="pa-4">
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.h5" id="@MapHeadingId">Explore providers</MudText>
+                                        <MudText Typo="Typo.caption">@MappedLocationCount mapped locations</MudText>
+                                    </MudStack>
+                                    <MudButton Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               StartIcon="@MudBlazor.Icons.Material.Filled.List"
+                                               OnClick="ToggleNearbyDrawer"
+                                               aria-controls="@NearbyDrawerId"
+                                               aria-expanded="@_nearbyOpen.ToString().ToLowerInvariant()">
+                                        Nearby providers (@MappedProviderCount)
+                                    </MudButton>
+                                </MudStack>
+                                <MudDivider Class="flex-grow-0" />
+                                <div id="@MapId" class="lhb-provider-map flex-grow-1" role="region" aria-label="Map of provider locations"
+                                     data-lhb-provider-map data-lhb-mapbox-token="@_mapboxAccessToken" data-lhb-provider-pins="@MapPinsJson">
+                                </div>
+                            </MudStack>
+                        </MudDrawerContainer>
+                    </MudPaper>
+                </MudStack>
+            </MudPaper>
+        }
+    </MudStack>
+}
+
+@code {
+    public override string Actions => "Map";
+
+    public override string Title => "Provider Map";
+
+    public override bool UseAdminContainer => false;
+
+    private List<ProviderListItem> _providers;
+    private List<CategoryTree> _categories = new List<CategoryTree>();
+    private Dictionary<int, string> _categoryNames = new Dictionary<int, string>();
+    private Dictionary<int, string> _subCategoryNames = new Dictionary<int, string>();
+    private int _categoryId;
+    private int _subCategoryId;
+    private string _mapboxAccessToken = string.Empty;
+    private bool _nearbyOpen = true;
+
+    private List<SubCategory> SubCategories =>
+        _categories.FirstOrDefault(item => item.Category.CategoryId == _categoryId)?.SubCategories ?? new List<SubCategory>();
+
+    private List<ProviderListItem> FilteredProviders => _providers
+        .Where(item => item.IsActive)
+        .Where(item => _categoryId == 0 || item.CategoryIds.Contains(_categoryId))
+        .Where(item => _subCategoryId == 0 || item.SubCategoryIds.Contains(_subCategoryId))
+        .ToList();
+
+    private string MapId => $"lhb-provider-map-action-{ModuleState.ModuleId}";
+    private string LocationInputId => $"lhb-user-location-map-{ModuleState.ModuleId}";
+    private string LocationStatusId => $"lhb-user-location-map-status-{ModuleState.ModuleId}";
+    private string LocationSuggestionsId => $"lhb-location-map-suggestions-{ModuleState.ModuleId}";
+    private string SearchHeadingId => $"lhb-provider-map-search-heading-{ModuleState.ModuleId}";
+    private string MapHeadingId => $"lhb-provider-map-action-heading-{ModuleState.ModuleId}";
+    private string NearbyDrawerId => $"lhb-map-nearby-drawer-{ModuleState.ModuleId}";
+    private string NearbyHeadingId => $"lhb-map-nearby-heading-{ModuleState.ModuleId}";
+    private int MappedProviderCount => FilteredProviders.Count(provider => provider.Locations.Count > 0);
+    private int MappedLocationCount => FilteredProviders.Sum(provider => provider.Locations.Count);
+
+    private string MapPinsJson => System.Text.Json.JsonSerializer.Serialize(
+        FilteredProviders.SelectMany(provider => provider.Locations.Select(location => new
+        {
+            providerId = provider.ProviderId,
+            name = provider.Name,
+            address = location.Address,
+            longitude = location.Longitude,
+            latitude = location.Latitude,
+            categories = provider.CategoryIds.Where(_categoryNames.ContainsKey).Select(id => _categoryNames[id]).OrderBy(name => name),
+            subcategories = provider.SubCategoryIds.Where(_subCategoryNames.ContainsKey).Select(id => _subCategoryNames[id]).OrderBy(name => name),
+            url = DetailsUrl(provider)
+        })));
+
+    private void OnCategoryChanged(int categoryId)
+    {
+        _categoryId = categoryId;
+        _subCategoryId = 0;
+    }
+
+    private void ToggleNearbyDrawer()
+    {
+        _nearbyOpen = !_nearbyOpen;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        try
+        {
+            _mapboxAccessToken = SettingService.GetSetting(ModuleState.Settings, "MapboxAccessToken", string.Empty);
+            _categories = await ProviderService.GetCategoriesAsync(ModuleState.ModuleId) ?? new List<CategoryTree>();
+            _categoryNames = _categories.ToDictionary(item => item.Category.CategoryId, item => item.Category.Name);
+            _subCategoryNames = _categories.SelectMany(item => item.SubCategories).ToDictionary(item => item.SubCategoryId, item => item.Name);
+            _providers = await ProviderService.GetProvidersAsync(ModuleState.ModuleId) ?? new List<ProviderListItem>();
+        }
+        catch (Exception ex)
+        {
+            await logger.LogError(ex, "Error Loading Provider Map {Error}", ex.Message);
+            AddModuleMessage("The provider map could not be loaded.", MessageType.Error);
+            _providers ??= new List<ProviderListItem>();
+        }
+    }
+
+    private string DetailsUrl(ProviderListItem provider) => EditUrl("Details", $"id={provider.ProviderId}");
+}
