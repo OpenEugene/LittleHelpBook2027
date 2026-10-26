@@ -19,7 +19,7 @@ namespace OpenEugene.Module.Providers
                 new Stylesheet("https://api.mapbox.com/mapbox-gl-js/v3.33.0/mapbox-gl.css"),
                 new Stylesheet("~/Module.css?v=16"),
                 new Script("https://api.mapbox.com/mapbox-gl-js/v3.33.0/mapbox-gl.js"),
-                new Script("~/Module.js?v=18")
+                new Script("~/Module.js?v=19")
             }
         };
     }
